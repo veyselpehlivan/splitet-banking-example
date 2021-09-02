@@ -1,0 +1,119 @@
+server:
+  port: ${PORT:${SERVER_PORT:9003}}
+spring:
+  profiles:
+    active: development
+logging:
+  level:
+    root: INFO
+    kafka.*: WARN
+    org.springframework.*: INFO
+    org.neo4j.*: INFO
+    org.apache.kafka.*: WARN
+    com.kloia.eventapis.*: DEBUG
+---
+spring:
+  profiles: development
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:postgres}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    type: com.zaxxer.hikari.HikariDataSource
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    database: POSTGRESQL
+    show-sql: true
+    hibernate:
+      ddl-auto: 'create'
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    properties:
+      hibernate:
+        globally_quoted_identifiers: true
+        jdbc.lob.non_contextual_creation: true
+  cloud:
+    kubernetes.discovery.enabled: false
+    kubernetes.ribbon.enabled: false
+    kubernetes.enabled: false
+eureka:
+  instance:
+    prefer-ip-address: true
+  client:
+    registerWithEureka: true
+    fetchRegistry: true
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+eventapis:
+  baseEventsPackage: com.example.transactionservice.event
+  storeConfig:
+    contactPoints: ${CASSANDRA_HOST:localhost}:${CASSANDRA_PORT:9042}
+    keyspaceName: eventapis
+    username: cassandra
+    password: cassandra
+  eventRecords:
+    transaction: transactionevents
+  eventBus:
+    bootstrapServers: ${KAFKA_HOST:localhost}:${KAFKA_PORT:9092}
+    consumer:
+      groupId: transaction-service-group
+---
+spring:
+  profiles: docker
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:postgres}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    type: com.zaxxer.hikari.HikariDataSource
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    database: POSTGRESQL
+    show-sql: true
+    hibernate:
+      ddl-auto: 'create'
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    properties:
+      hibernate:
+        globally_quoted_identifiers: true
+        jdbc.lob.non_contextual_creation: true
+  data:
+    jpa:
+      repositories:
+        enabled: true
+eureka:
+  instance:
+    prefer-ip-address: true
+  client:
+    registerWithEureka: true
+    fetchRegistry: true
+    serviceUrl:
+      defaultZone: http://discovery-service:8761/eureka/
+---
+spring:
+  profiles: kubernetes
+  datasource:
+    url: jdbc:postgresql://${postgres.host:localhost}:${postgres.port:5432}
+    data-username: postgres
+    data-password: password
+    driver-class-name: org.postgresql.Driver
+  cloud:
+    kubernetes.discovery.enabled: true
+    kubernetes.ribbon.enabled: true
+    kubernetes.enabled: true
+ribbon.eureka.enabled: false
+eureka.client.enabled: false
+---
+spring:
+  profiles: test
+  cloud:
+    kubernetes.discovery.enabled: false
+    kubernetes.ribbon.enabled: false
+    kubernetes.enabled: false
+  datasource:
+    url: jdbc:postgresql://${postgres.host:localhost}:${postgres.port:5432}
+    data-username: postgres
+    data-password: password
+    driver-class-name: org.postgresql.Driver
+eureka:
+  client:
+    enabled: false
